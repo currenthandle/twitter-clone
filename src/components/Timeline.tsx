@@ -6,6 +6,12 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import updateLocal from "dayjs/plugin/updateLocale";
 import { useEffect, useState } from "react";
+import { AiFillHeart } from "react-icons/ai";
+import {
+  InfiniteData,
+  QueryClient,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 dayjs.extend(relativeTime);
 dayjs.extend(updateLocal);
@@ -55,11 +61,86 @@ function useScrollPosition() {
   return scrollPosition;
 }
 
+function updateCache({
+  client,
+  variables,
+  data,
+  action,
+}: {
+  client: QueryClient;
+  variables: { tweetId: string };
+  data: {
+    userId: string;
+  };
+  action: "like" | "unlike";
+}) {
+  client.setQueryData(
+    [
+      ["tweet", "timeline"],
+      {
+        input: {
+          limit: 10,
+        },
+        type: "infinite",
+      },
+    ],
+    (oldData) => {
+      const newData = oldData as InfiniteData<
+        RouterOutputs["tweet"]["timeline"]
+      >;
+
+      const newTweets = newData.pages.map((page) => {
+        return {
+          tweets: page.tweets.map((tweet) => {
+            if (tweet.id === variables.tweetId) {
+              return {
+                ...tweet,
+                likes: action === "like" ? [data.userId] : [],
+              };
+            }
+            return tweet;
+          }),
+        };
+      });
+
+      return {
+        ...newData,
+        pages: newTweets,
+      };
+    }
+  );
+}
+
 function Tweet({
   tweet,
+  client,
 }: {
   tweet: RouterOutputs["tweet"]["timeline"]["tweets"][number];
+  client: QueryClient;
 }) {
+  const likeMutation = api.tweet.like.useMutation({
+    onSuccess: (data, variables) => {
+      updateCache({
+        client,
+        data,
+        variables,
+        action: "like",
+      });
+    },
+  }).mutateAsync;
+  const unlikeMutation = api.tweet.unlike.useMutation({
+    onSuccess: (data, variables) => {
+      updateCache({
+        client,
+        data,
+        variables,
+        action: "unlike",
+      });
+    },
+  }).mutateAsync;
+
+  const hasLiked = tweet.likes.length > 0;
+
   return (
     <div className="mb-4 border-b-2 border-gray-500">
       <div className="flex p-2">
@@ -83,6 +164,21 @@ function Tweet({
           <div>{tweet.text}</div>
         </div>
       </div>
+      <div className="mt-4 flex p-2">
+        <AiFillHeart
+          color={hasLiked ? "red" : "gray"}
+          size="1.5rem"
+          onClick={() => {
+            if (hasLiked) {
+              void unlikeMutation({ tweetId: tweet.id });
+              return;
+            }
+            void likeMutation({ tweetId: tweet.id });
+            return;
+          }}
+        />
+        <span className="text-sm text-gray-500">{10}</span>
+      </div>
     </div>
   );
 }
@@ -99,10 +195,10 @@ export function Timeline() {
         getNextPageParam: (lastPage) => lastPage.nextCursor,
       }
     );
-  console.log("data", data);
-  const tweets = data?.pages.flatMap((page) => page.tweets) ?? [];
 
-  console.log("scrollPosition", scrollPosition);
+  const client = useQueryClient();
+
+  const tweets = data?.pages.flatMap((page) => page.tweets) ?? [];
 
   useEffect(() => {
     if (scrollPosition > 90 && hasNextPage && !isFetching) {
@@ -116,7 +212,7 @@ export function Timeline() {
       <CreateTweet />
       <div className="border-x-2 border-t-2 border-gray-500">
         {tweets.map((tweet) => (
-          <Tweet key={tweet.id} tweet={tweet} />
+          <Tweet key={tweet.id} tweet={tweet} client={client} />
         ))}
 
         {!hasNextPage && <p>No more items to load</p>}
