@@ -14,7 +14,7 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div>
-        <button onClick={void signIn()}>Login</button>
+        <button onClick={() => void signIn}>Login</button>
       </div>
     </>
   );
