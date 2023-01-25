@@ -16,14 +16,16 @@ export function CreateTweet() {
 
   const { mutateAsync } = api.tweet.create.useMutation();
 
-  // async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-  async function handleSubmit(e: React.SyntheticEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    // async function handleSubmit(e) {
     e.preventDefault();
+    console.log("in handleSubmit");
 
     try {
       // await tweetSchema.parse({ text });
       tweetSchema.parse({ text });
     } catch (err) {
+      // console.log("err", err);
       if (err instanceof ZodError) {
         setError(err.message);
         return;
@@ -39,7 +41,7 @@ export function CreateTweet() {
     <>
       {error && JSON.stringify(error)}
       <form
-        onSubmit={void handleSubmit}
+        onSubmit={(e) => void handleSubmit(e)}
         className="mb-4 flex w-full flex-col rounded-md border-2 p-4"
       >
         <textarea
@@ -48,7 +50,7 @@ export function CreateTweet() {
         />
         <div className="mt-4 flex justify-end">
           <button
-            className="bg-primary rounded-md py-2 px-4 text-white"
+            className="rounded-md bg-primary py-2 px-4 text-white"
             type="submit"
           >
             Tweet
