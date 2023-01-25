@@ -43,13 +43,6 @@ export const tweetRouter = createTRPCRouter({
         ],
         cursor: cursor ? { id: cursor } : undefined,
         include: {
-          author: {
-            select: {
-              name: true,
-              image: true,
-              id: true,
-            },
-          },
           likes: {
             where: {
               userId,
@@ -57,6 +50,16 @@ export const tweetRouter = createTRPCRouter({
             select: {
               userId: true,
             },
+          },
+          author: {
+            select: {
+              name: true,
+              image: true,
+              id: true,
+            },
+          },
+          _count: {
+            select: { likes: true },
           },
         },
       });
