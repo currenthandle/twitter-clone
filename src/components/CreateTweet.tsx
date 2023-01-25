@@ -38,10 +38,21 @@ export function CreateTweet() {
   return (
     <>
       {error && JSON.stringify(error)}
-      <form onSubmit={void handleSubmit}>
-        <textarea onChange={(e) => setText(e.target.value)} />
-        <div>
-          <button type="submit">Tweet</button>
+      <form
+        onSubmit={void handleSubmit}
+        className="mb-4 flex w-full flex-col rounded-md border-2 p-4"
+      >
+        <textarea
+          className="w-full p-4 shadow"
+          onChange={(e) => setText(e.target.value)}
+        />
+        <div className="mt-4 flex justify-end">
+          <button
+            className="bg-primary rounded-md py-2 px-4 text-white"
+            type="submit"
+          >
+            Tweet
+          </button>
         </div>
       </form>
     </>
