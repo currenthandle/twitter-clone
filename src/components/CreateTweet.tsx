@@ -14,7 +14,14 @@ export function CreateTweet() {
   const [text, setText] = useState("");
   const [error, setError] = useState("");
 
-  const { mutateAsync } = api.tweet.create.useMutation();
+  const utils = api.useContext();
+
+  const { mutateAsync } = api.tweet.create.useMutation({
+    onSuccess: () => {
+      setText("");
+      void utils.tweet.timeline.invalidate();
+    },
+  });
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     // async function handleSubmit(e) {
