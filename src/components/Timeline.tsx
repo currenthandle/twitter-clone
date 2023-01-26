@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { api, RouterOutputs } from "../utils/api";
+import type { RouterInputs, RouterOutputs } from "../utils/api";
+import { api } from "../utils/api";
 import { CreateTweet } from "./CreateTweet";
 
 import dayjs from "dayjs";
@@ -7,11 +8,12 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import updateLocal from "dayjs/plugin/updateLocale";
 import { useEffect, useState } from "react";
 import { AiFillHeart } from "react-icons/ai";
-import {
-  InfiniteData,
-  QueryClient,
-  useQueryClient,
-} from "@tanstack/react-query";
+import type { InfiniteData, QueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+
+import Link from "next/link";
+
+const LIMIT = 10;
 
 dayjs.extend(relativeTime);
 dayjs.extend(updateLocal);
@@ -66,6 +68,7 @@ function updateCache({
   variables,
   data,
   action,
+  input,
 }: {
   client: QueryClient;
   variables: { tweetId: string };
@@ -73,14 +76,13 @@ function updateCache({
     userId: string;
   };
   action: "like" | "unlike";
+  input: RouterInputs["tweet"]["timeline"];
 }) {
   client.setQueryData(
     [
       ["tweet", "timeline"],
       {
-        input: {
-          limit: 10,
-        },
+        input,
         type: "infinite",
       },
     ],
@@ -118,9 +120,11 @@ function updateCache({
 function Tweet({
   tweet,
   client,
+  input,
 }: {
   tweet: RouterOutputs["tweet"]["timeline"]["tweets"][number];
   client: QueryClient;
+  input: RouterInputs["tweet"]["timeline"];
 }) {
   const likeMutation = api.tweet.like.useMutation({
     onSuccess: (data, variables) => {
@@ -128,6 +132,7 @@ function Tweet({
         client,
         data,
         variables,
+        input,
         action: "like",
       });
     },
@@ -138,6 +143,7 @@ function Tweet({
         client,
         data,
         variables,
+        input,
         action: "unlike",
       });
     },
@@ -159,7 +165,9 @@ function Tweet({
         )}
         <div className="ml-2">
           <div className="flex items-center">
-            <p className="font-bold">{tweet.author.name}</p>
+            <p className="font-bold">
+              <Link href={`/${tweet.author.name}`}>{tweet.author.name}</Link>
+            </p>
             <p className="text-sm text-gray-400">
               {" "}
               - {dayjs(tweet.createdAt).fromNow()}
@@ -187,13 +195,18 @@ function Tweet({
   );
 }
 
-export function Timeline() {
+export function Timeline({
+  where = {},
+}: {
+  where: RouterInputs["tweet"]["timeline"]["where"];
+}) {
   const scrollPosition = useScrollPosition();
 
   const { data, hasNextPage, fetchNextPage, isFetching } =
     api.tweet.timeline.useInfiniteQuery(
       {
-        limit: 10,
+        limit: LIMIT,
+        where,
       },
       {
         getNextPageParam: (lastPage) => lastPage.nextCursor,
@@ -216,7 +229,12 @@ export function Timeline() {
       <CreateTweet />
       <div className="border-x-2 border-t-2 border-gray-500">
         {tweets.map((tweet) => (
-          <Tweet key={tweet.id} tweet={tweet} client={client} />
+          <Tweet
+            key={tweet.id}
+            tweet={tweet}
+            client={client}
+            input={{ where, limit: LIMIT }}
+          />
         ))}
 
         {!hasNextPage && <p>No more items to load</p>}
