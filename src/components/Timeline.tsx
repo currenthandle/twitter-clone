@@ -200,8 +200,9 @@ function Tweet({
 export function Timeline({
   where = {},
 }: {
-  where: RouterInputs["tweet"]["timeline"]["where"];
+  where?: RouterInputs["tweet"]["timeline"]["where"];
 }) {
+  // console.log("where", where);
   const scrollPosition = useScrollPosition();
 
   const { data, hasNextPage, fetchNextPage, isFetching } =
