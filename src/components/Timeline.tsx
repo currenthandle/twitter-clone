@@ -166,7 +166,9 @@ function Tweet({
         <div className="ml-2">
           <div className="flex items-center">
             <p className="font-bold">
-              <Link href={`/${tweet.author.name}`}>{tweet.author.name}</Link>
+              <Link href={`/${tweet.author.name || ""}`}>
+                {tweet.author.name}
+              </Link>
             </p>
             <p className="text-sm text-gray-400">
               {" "}
